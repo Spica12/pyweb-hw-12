@@ -1,5 +1,5 @@
-from repositories.contacts import ContactRepo
-from schemas.contact import ContactSchema, ContactCreateSchema
+from src.repositories.contacts import ContactRepo
+from src.schemas.contact import ContactSchema, ContactCreateSchema
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from conf.config import config
+from src.conf.config import config
 
 
 class DataBaseSessionManager:

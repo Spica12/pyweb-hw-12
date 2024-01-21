@@ -13,7 +13,7 @@ class ContactSchema(BaseModel):
     is_favorite: bool
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -25,5 +25,3 @@ class ContactCreateSchema(BaseModel):
     birthday: date
     notes: str
     is_favorite: bool = False
-
-
