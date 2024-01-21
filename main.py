@@ -6,7 +6,7 @@ from src.routers.auth import router as auth
 
 app = FastAPI()
 app.include_router(contacts_router, prefix="/contacts")
-app.include_router(auth, prefix="/contacts")
+app.include_router(auth, prefix="/auth")
 
 
 @app.get("/healthchecker")

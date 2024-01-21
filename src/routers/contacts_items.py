@@ -5,7 +5,7 @@ from src.schemas.contact import ContactSchema, ContactCreateSchema
 from src.dependencies.database import get_db
 from src.services.contact import ContactService
 
-router = APIRouter(prefix="/contacts", tags=["contacts"])
+router = APIRouter(tags=["contacts"])
 
 
 @router.get("/", response_model=list[ContactSchema])
