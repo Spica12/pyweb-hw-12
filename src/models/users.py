@@ -24,7 +24,12 @@ class UserModel(Base):
 class TokenModel(Base):
     __tablename__ = "tokens"
     id: Mapped[int] = mapped_column(primary_key=True)
-    access_token: Mapped[str] = mapped_column(String(255), nullable=True)
     refresh_token: Mapped[str] = mapped_column(String(255), nullable=True)
     user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=True)
     user: Mapped[UserModel] = relationship("UserModel", backref="tokens")
+    created_at: Mapped[date] = mapped_column(
+        "created_at", DateTime, default=func.now(), nullable=True
+    )
+    updated_at: Mapped[date] = mapped_column(
+        "updated_at", DateTime, default=func.now(), onupdate=func.now(), nullable=True
+    )

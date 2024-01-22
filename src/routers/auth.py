@@ -9,7 +9,7 @@ from fastapi.security import (
 
 from src.schemas.user import UserCreateSchema, UserReadSchema
 from src.repositories import users as repositories_users
-from src.services.auth import auth_service
+from src.services.auth import AuthService
 
 router = APIRouter(tags=["auth"])
 get_refresh_token = HTTPBearer()
@@ -19,13 +19,13 @@ get_refresh_token = HTTPBearer()
     "/signup", response_model=UserReadSchema, status_code=status.HTTP_201_CREATED
 )
 async def signup(body: UserCreateSchema, db: AsyncSession = Depends(get_db)):
-    exist_user = await repositories_users.get_user_by_username(body.username, db)
+    exist_user = await AuthService(db).get_user_by_username(body.username)
     if exist_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
         )
-    body.password = auth_service.get_password_hash(body.password)
-    new_user = await repositories_users.create_user(body, db)
+    body.password = AuthService(db).get_password_hash(body.password)
+    new_user = await AuthService(db).create_user(body)
 
     return new_user
 
@@ -34,17 +34,24 @@ async def signup(body: UserCreateSchema, db: AsyncSession = Depends(get_db)):
 async def login(
     body: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
 ):
-    user = await repositories_users.get_user_by_username(body.username, db)
+    # user = await repositories_users.get_user_by_username(body.username, db)
+    user = await AuthService(db).get_user_by_username(body.username)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username"
         )
-    if not auth_service.verify_password(body.password, user.password):
+    if not AuthService(db).verify_password(body.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password"
         )
-    access_token = await auth_service.create_access_token(data={"sub": user.username})
-    refresh_token = await auth_service.create_refresh_token(data={"sub": user.username})
+    access_token = await AuthService(db).create_access_token(
+        data={"sub": user.username}
+    )
+    refresh_token = await AuthService(db).create_refresh_token(
+        data={"sub": user.username}
+    )
+
+    await AuthService(db).update_refresh_token(user, access_token)
 
     return {
         "access_token": access_token,
