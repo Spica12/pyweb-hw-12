@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Optional
+from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +15,7 @@ from src.schemas.user import UserCreateSchema
 class AuthService:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     SECRET_KEY = config.SECRET_KEY
-    ALGORITHM = "HS256"
+    ALGORITHM = config.ALGORITHM
 
     def __init__(self, db: AsyncSession):
         self.repo = UserRepo(db=db)
@@ -65,3 +66,26 @@ class AuthService:
 
     async def update_refresh_token(self, user: UserModel, refresh_token: str | None):
         await self.repo.update_token(user, refresh_token)
+
+    async def decode_refresh_token(self, refresh_token: str):
+        try:
+            payload = jwt.decode(
+                refresh_token, self.SECRET_KEY, algorithms=[self.ALGORITHM]
+            )
+            if payload["scope"] == "refresh_token":
+                username = payload["sub"]
+                return username
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid scope for token",
+            )
+
+        except JWTError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+            )
+
+    async def get_refresh_token_by_user(self, user: UserModel):
+        refresh_token = await self.repo.get_refresh_token(user)
+        return refresh_token

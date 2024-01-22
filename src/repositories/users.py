@@ -36,3 +36,10 @@ class UserRepo:
             new_token = TokenModel(refresh_token=refresh_token, user_id=user.id)
             self.db.add(new_token)
         await self.db.commit()
+
+    async def get_refresh_token(self, user: UserModel):
+        stmt = select(TokenModel).filter_by(user_id=user.id)
+        token = await self.db.execute(stmt)
+        token = token.scalar_one_or_none()
+
+        return token

@@ -7,7 +7,7 @@ from fastapi.security import (
     HTTPBearer,
 )
 
-from src.schemas.user import UserCreateSchema, UserReadSchema
+from src.schemas.user import UserCreateSchema, UserReadSchema, TokenSchema
 from src.repositories import users as repositories_users
 from src.services.auth import AuthService
 
@@ -30,7 +30,7 @@ async def signup(body: UserCreateSchema, db: AsyncSession = Depends(get_db)):
     return new_user
 
 
-@router.post("/login")
+@router.post("/login", response_model=TokenSchema)
 async def login(
     body: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
 ):
@@ -51,7 +51,7 @@ async def login(
         data={"sub": user.username}
     )
 
-    await AuthService(db).update_refresh_token(user, access_token)
+    await AuthService(db).update_refresh_token(user, refresh_token)
 
     return {
         "access_token": access_token,
@@ -60,9 +60,32 @@ async def login(
     }
 
 
-# @router.post("/refresh_token")
-# async def refresh_token(
-#     credentials: HTTPAuthorizationCredentials = Security(get_refresh_token),
-#     db: AsyncSession = Depends(get_db),
-# ):
-#     pass
+@router.post("/refresh_token", response_model=TokenSchema)
+async def refresh_token(
+    credentials: HTTPAuthorizationCredentials = Security(get_refresh_token),
+    db: AsyncSession = Depends(get_db),
+):
+    token = credentials.credentials
+    username = await AuthService(db).decode_refresh_token(token)
+    user = await AuthService(db).get_user_by_username(username)
+    refresh_token = await AuthService(db).get_refresh_token_by_user(user)
+    if refresh_token != token:
+        await AuthService(db).update_refresh_token(user, None)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        )
+
+    access_token = await AuthService(db).create_access_token(
+        data={"sub": user.username}
+    )
+    refresh_token = await AuthService(db).create_refresh_token(
+        data={"sub": user.username}
+    )
+
+    await AuthService(db).update_refresh_token(user, refresh_token)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
