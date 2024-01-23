@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.schemas.contact import ContactSchema, ContactCreateSchema
 from src.dependencies.database import get_db
 from src.services.contact import ContactService
+from src.models.users import UserModel
+from src.services.auth import AuthService
 
 router = APIRouter(tags=["contacts"])
 
@@ -13,8 +15,11 @@ async def get_all_contacts(
     limit: int = Query(default=10, ge=10, le=500),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(AuthService(Depends(get_db)).get_current_user),
 ):
-    contacts = await ContactService(db=db).get_all_contacts(limit=limit, offset=offset)
+    contacts = await ContactService(db=db).get_all_contacts(
+        limit=limit, offset=offset, user=user
+    )
 
     return contacts
 

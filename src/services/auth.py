@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,12 +11,15 @@ from src.conf.config import config
 from src.models.users import UserModel
 from src.repositories.users import UserRepo
 from src.schemas.user import UserCreateSchema
+from src.dependencies.database import get_db
 
 
 class AuthService:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     SECRET_KEY = config.SECRET_KEY
     ALGORITHM = config.ALGORITHM
+
+    oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
     def __init__(self, db: AsyncSession):
         self.repo = UserRepo(db=db)
@@ -89,3 +93,28 @@ class AuthService:
     async def get_refresh_token_by_user(self, user: UserModel):
         refresh_token = await self.repo.get_refresh_token(user)
         return refresh_token
+
+    async def get_current_user(
+        self, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
+    ):
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-AUTHENTICATE": "BEARER"},
+        )
+        try:
+            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            username = payload["sub"]
+            if payload["scope"] == "access_token":
+                if username is None:
+                    raise credentials_exception
+            else:
+                raise credentials_exception
+        except JWTError:
+            raise credentials_exception
+
+        user = await self.repo.get_user_by_username(username)
+        if user is None:
+            raise credentials_exception
+
+        return user

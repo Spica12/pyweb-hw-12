@@ -60,7 +60,7 @@ async def login(
     }
 
 
-@router.post("/refresh_token", response_model=TokenSchema)
+@router.get("/refresh_token", response_model=TokenSchema)
 async def refresh_token(
     credentials: HTTPAuthorizationCredentials = Security(get_refresh_token),
     db: AsyncSession = Depends(get_db),

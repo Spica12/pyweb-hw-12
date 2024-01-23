@@ -5,14 +5,15 @@ from sqlalchemy import select, text
 from datetime import datetime, timedelta
 
 from src.schemas.contact import ContactSchema, ContactCreateSchema
+from src.models.users import UserModel
 
 
 class ContactRepo:
     def __init__(self, db):
         self.db: AsyncSession = db
 
-    async def get_all(self, limit: int, offset: int):
-        stmt = select(ContactModel).offset(offset).limit(limit)
+    async def get_all(self, limit: int, offset: int, user: UserModel):
+        stmt = select(ContactModel).filter_by(user=user).offset(offset).limit(limit)
         contacts = await self.db.execute(stmt)
 
         return contacts.scalars().all()

@@ -42,4 +42,4 @@ class UserRepo:
         token = await self.db.execute(stmt)
         token = token.scalar_one_or_none()
 
-        return token
+        return token.refresh_token

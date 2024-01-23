@@ -1,3 +1,4 @@
+from src.models.users import UserModel
 from src.repositories.contacts import ContactRepo
 from src.schemas.contact import ContactSchema, ContactCreateSchema
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,10 +8,11 @@ class ContactService:
     def __init__(self, db: AsyncSession):
         self.repo = ContactRepo(db=db)
 
-    async def get_all_contacts(self, limit: int, offset: int):
+    async def get_all_contacts(self, limit: int, offset: int, user: UserModel):
         all_contacts_from_db = await self.repo.get_all(
             limit=limit,
             offset=offset,
+            user=user,
         )
 
         return all_contacts_from_db
