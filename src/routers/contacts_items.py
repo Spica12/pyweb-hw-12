@@ -5,7 +5,7 @@ from src.schemas.contact import ContactSchema, ContactCreateSchema
 from src.dependencies.database import get_db
 from src.services.contact import ContactService
 from src.models.users import UserModel
-from src.services.auth import AuthService
+from src.services.auth import auth_service
 
 router = APIRouter(tags=["contacts"])
 
@@ -15,7 +15,7 @@ async def get_all_contacts(
     limit: int = Query(default=10, ge=10, le=500),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
-    user: UserModel = Depends(AuthService(Depends(get_db)).get_current_user),
+    user: UserModel = Depends(auth_service.get_current_user),
 ):
     contacts = await ContactService(db=db).get_all_contacts(
         limit=limit, offset=offset, user=user
@@ -28,8 +28,9 @@ async def get_all_contacts(
 async def get_contact_by_id(
     contact_id: int,
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(auth_service.get_current_user),
 ):
-    contact = await ContactService(db=db).get_by_id(contact_id)
+    contact = await ContactService(db=db).get_by_id(contact_id, user)
 
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
@@ -41,8 +42,9 @@ async def get_contact_by_id(
 async def find_contacts(
     key_word: str = Path(..., title="Key word"),
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(auth_service.get_current_user),
 ):
-    contact = await ContactService(db=db).find_contacts(key_word)
+    contact = await ContactService(db=db).find_contacts(key_word, user)
 
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
@@ -54,19 +56,21 @@ async def find_contacts(
 async def create_contact(
     body: ContactCreateSchema,
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(auth_service.get_current_user),
 ):
-    contact = await ContactService(db=db).create_contact(body)
+    contact = await ContactService(db=db).create_contact(body, user)
 
     return contact
 
 
-@router.put("/{contact_id}")
+@router.put("/{contact_id}", response_model=ContactSchema)
 async def update_contact(
     contact_id: int,
     body: ContactCreateSchema,
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(auth_service.get_current_user),
 ):
-    contact = await ContactService(db=db).update_contact(contact_id, body)
+    contact = await ContactService(db=db).update_contact(contact_id, body, user)
 
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
@@ -78,8 +82,9 @@ async def update_contact(
 async def delete_contact(
     contact_id: int,
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(auth_service.get_current_user),
 ):
-    contact = await ContactService(db=db).delete_contact(contact_id)
+    contact = await ContactService(db=db).delete_contact(contact_id, user)
 
     return contact
 
@@ -89,9 +94,10 @@ async def upcoming_birthday(
     limit: int = Query(default=10, ge=10, le=500),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(auth_service.get_current_user),
 ):
     contacts = await ContactService(db=db).get_upcoming_birthday(
-        limit=limit, offset=offset
+        limit=limit, offset=offset, user=user
     )
 
     return contacts

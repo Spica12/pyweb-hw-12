@@ -21,8 +21,8 @@ class AuthService:
 
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-    def __init__(self, db: AsyncSession):
-        self.repo = UserRepo(db=db)
+    # def __init__(self, db: AsyncSession):
+    #     self.repo = UserRepo(db=db)
 
     def get_password_hash(self, password: str):
         return self.pwd_context.hash(password)
@@ -30,12 +30,12 @@ class AuthService:
     def verify_password(self, plain_password, hashed_pasword):
         return self.pwd_context.verify(plain_password, hashed_pasword)
 
-    async def create_user(self, body: UserCreateSchema):
-        new_user = await self.repo.create_user(body)
+    async def create_user(self, body: UserCreateSchema, db: AsyncSession):
+        new_user = await UserRepo(db).create_user(body)
         return new_user
 
-    async def get_user_by_username(self, username: str):
-        user = await self.repo.get_user_by_username(username)
+    async def get_user_by_username(self, username: str, db: AsyncSession):
+        user = await UserRepo(db).get_user_by_username(username)
         return user
 
     async def create_access_token(
@@ -68,8 +68,10 @@ class AuthService:
 
         return encode_jwt
 
-    async def update_refresh_token(self, user: UserModel, refresh_token: str | None):
-        await self.repo.update_token(user, refresh_token)
+    async def update_refresh_token(
+        self, user: UserModel, refresh_token: str | None, db: AsyncSession
+    ):
+        await UserRepo(db).update_token(user, refresh_token)
 
     async def decode_refresh_token(self, refresh_token: str):
         try:
@@ -90,8 +92,8 @@ class AuthService:
                 detail="Could not validate credentials",
             )
 
-    async def get_refresh_token_by_user(self, user: UserModel):
-        refresh_token = await self.repo.get_refresh_token(user)
+    async def get_refresh_token_by_user(self, user: UserModel, db: AsyncSession):
+        refresh_token = await UserRepo(db).get_refresh_token(user)
         return refresh_token
 
     async def get_current_user(
@@ -113,8 +115,11 @@ class AuthService:
         except JWTError:
             raise credentials_exception
 
-        user = await self.repo.get_user_by_username(username)
+        user = await UserRepo(db).get_user_by_username(username)
         if user is None:
             raise credentials_exception
 
         return user
+
+
+auth_service = AuthService()

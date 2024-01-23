@@ -18,22 +18,22 @@ class ContactRepo:
 
         return contacts.scalars().all()
 
-    async def create(self, body: ContactCreateSchema):
-        contact = ContactModel(**body.model_dump(exclude_unset=True))
+    async def create(self, body: ContactCreateSchema, user: UserModel):
+        contact = ContactModel(**body.model_dump(exclude_unset=True), user=user)
         self.db.add(contact)
         await self.db.commit()
         await self.db.refresh(contact)
 
         return contact
 
-    async def get_by_id(self, contact_id: int):
-        stmt = select(ContactModel).filter_by(id=contact_id)
+    async def get_by_id(self, contact_id: int, user: UserModel):
+        stmt = select(ContactModel).filter_by(id=contact_id, user=user)
         contacts = await self.db.execute(stmt)
 
         return contacts.scalar_one_or_none()
 
-    async def update(self, contact_id: int, body: ContactCreateSchema):
-        stmt = select(ContactModel).filter_by(id=contact_id)
+    async def update(self, contact_id: int, body: ContactCreateSchema, user: UserModel):
+        stmt = select(ContactModel).filter_by(id=contact_id, user=user)
         result = await self.db.execute(stmt)
         contact = result.scalar_one_or_none()
 
@@ -50,8 +50,8 @@ class ContactRepo:
 
         return contact
 
-    async def delete(self, contact_id: int):
-        stmt = select(ContactModel).filter_by(id=contact_id)
+    async def delete(self, contact_id: int, user: UserModel):
+        stmt = select(ContactModel).filter_by(id=contact_id, user=user)
         result = await self.db.execute(stmt)
         contact = result.scalar_one_or_none()
         if contact:
@@ -60,9 +60,10 @@ class ContactRepo:
 
         return contact
 
-    async def get_by_name(self, key_name: str):
+    async def get_by_name(self, key_name: str, user: UserModel):
         stmt = (
             select(ContactModel)
+            .filter_by(user=user)
             .where(text("LOWER(name) LIKE LOWER(:key_name)"))
             .params(key_name=f"%{key_name}%")
         )
@@ -70,9 +71,10 @@ class ContactRepo:
 
         return result.scalars().all()
 
-    async def get_by_surname(self, key_surname: str):
+    async def get_by_surname(self, key_surname: str, user: UserModel):
         stmt = (
             select(ContactModel)
+            .filter_by(user=user)
             .where(text("LOWER(surname) LIKE LOWER(:key_name)"))
             .params(key_name=f"%{key_surname}%")
         )
@@ -80,9 +82,10 @@ class ContactRepo:
 
         return result.scalars().all()
 
-    async def get_by_email(self, key_email: str):
+    async def get_by_email(self, key_email: str, user: UserModel):
         stmt = (
             select(ContactModel)
+            .filter_by(user=user)
             .where(text("LOWER(email) LIKE LOWER(:key_name)"))
             .params(key_name=f"%{key_email}%")
         )
@@ -90,11 +93,12 @@ class ContactRepo:
 
         return result.scalars().all()
 
-    async def get_upcoming_birthday(self, limit: int, offset: int):
+    async def get_upcoming_birthday(self, limit: int, offset: int, user: UserModel):
         today = datetime.now().date()
         next_week = today + timedelta(days=7)
         stmt = (
             select(ContactModel)
+            .filter_by(user=user)
             .where(ContactModel.birthday.between(today, next_week))
             .offset(offset)
             .limit(limit)
