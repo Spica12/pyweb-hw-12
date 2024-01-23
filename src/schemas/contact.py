@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from datetime import date
+
+from pydantic import BaseModel
 
 
 class ContactSchema(BaseModel):
@@ -13,7 +14,7 @@ class ContactSchema(BaseModel):
     is_favorite: bool
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -25,5 +26,3 @@ class ContactCreateSchema(BaseModel):
     birthday: date
     notes: str
     is_favorite: bool = False
-
-
