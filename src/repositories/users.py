@@ -1,10 +1,10 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from fastapi import Depends
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.users import UserModel, TokenModel
-from src.schemas.user import UserCreateSchema
 from src.dependencies.database import get_db
+from src.models.users import TokenModel, UserModel
+from src.schemas.user import UserCreateSchema
 
 
 class UserRepo:

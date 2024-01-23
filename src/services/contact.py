@@ -1,8 +1,8 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.models.users import UserModel
 from src.repositories.contacts import ContactRepo
-from src.schemas.contact import ContactSchema, ContactCreateSchema
-from sqlalchemy.ext.asyncio import AsyncSession
-from src.models.users import UserModel
+from src.schemas.contact import ContactCreateSchema, ContactSchema
 
 
 class ContactService:

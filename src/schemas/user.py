@@ -1,7 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field
+import uuid
 from datetime import date
 
-import uuid
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserCreateSchema(BaseModel):

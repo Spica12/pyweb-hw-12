@@ -1,11 +1,11 @@
-from src.models.contact import ContactModel
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
-
 from datetime import datetime, timedelta
 
-from src.schemas.contact import ContactSchema, ContactCreateSchema
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.models.contact import ContactModel
 from src.models.users import UserModel
+from src.schemas.contact import ContactCreateSchema, ContactSchema
 
 
 class ContactRepo:
